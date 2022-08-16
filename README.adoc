@@ -1,0 +1,19 @@
+= README
+:toc:
+[WIP] crossbackup 은 btrfs 서브볼륨, ZFS 데이터셋, rclone 간의 상호 증분백업을 가능하게 하는 것을 목적으로 하는 프로그램입니다. 또한 rclone 백업시, 클라우드의 용량과 대역폭을 아끼기 위해 내용을 rar, tar.zst, 7z 로 아카이브해서 올리는 기능을 지원합니다. 백업시, CoW 파일시스템의 스냅샷을 찍어서, 백업 도중 변경에 대응을 가능하게 하며, 스냅샷은 백업 종료시 자동으로 삭제합니다.
+
+현재 zfs 데이터셋 또는 디렉터리를 rclone 에 증분백업 하는 것이 가능합니다.
+
+== Todo
+* [ ] btrfs snapshot 작동하는지 체크
+* [ ] btrfs/zfs 권한 사전에 없는지 체크 가능할까.
+  * btrfs 는 디렉터리 권한 요구하면 될것 같은데
+* [x] make archive with statement
+* [ ] allow user to config
+* [ ] typechecking
+* [ ] 출력
+** [ ] 출력 rclone 에 맞춰서
+** [ ] INFO: <name>: blalbla 이거 맞는거야?
+* [ ] zfs-dataset <-> btrfs subvolume
+** [ ] crossbackup using rsync
+** [ ] crossbackup using zfs copy, btrfs copy
