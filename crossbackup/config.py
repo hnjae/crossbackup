@@ -1,11 +1,10 @@
 import os
-import platform
 import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 import yaml
-from pydantic import BaseModel, BaseSettings, validator
+from pydantic import BaseModel, validator
 
 _DO_NOT_COMPRESS: Set[str] = {
     # images
@@ -70,7 +69,6 @@ _DO_NOT_COMPRESS: Set[str] = {
 }
 
 
-
 # Get Path of various Executable
 _RAR_EXE: Optional[Path] = None
 _tmp: Optional[str] = shutil.which("rar")
@@ -98,7 +96,7 @@ if _xdg_cache_home is not None:
 
 class _ProgramConfig(BaseModel):
     """
-    System setting class
+    System config class
     """
 
     # dry_run: bool = False
@@ -132,10 +130,10 @@ class _ProgramConfig(BaseModel):
 
     rar_path: Optional[Path] = _RAR_EXE
     rar_args: List[str] = [
-        "-s",    # Solid Archives
+        "-s",  # Solid Archives
         "-rr1",  # Add data recovery record
         "-htb",  # Use BLAKE2sp
-        "-m5",   # Best compression method
+        "-m5",  # Best compression method
         "-ma5",  # Use RAR 5.0
         "-idc",  # disables copyright string
         "".join(["-ms", ";".join(_DO_NOT_COMPRESS)]),
@@ -144,15 +142,15 @@ class _ProgramConfig(BaseModel):
     sevenz_path: Optional[Path] = _SEVENZ_EXE
     # -sccUTF-8 -scsUTF-8
     sevenz_args: List[str] = [
-        "-bd",      # disable percentage indicator
+        "-bd",  # disable percentage indicator
         "-scrcSHA256",
         "-m0=lzma2",
         "-mx7",
-        "-mfb=64",   # number of fast bytes for LZMA
-        "-md=32m",    # dictionary size
-        "-snl",      # store symbolic links as links (not default)
-        "-ssp",      # do not change Last Access Time of source files while archiving
-        "-ms=on",    # enable solid archive
+        "-mfb=64",  # number of fast bytes for LZMA
+        "-md=32m",  # dictionary size
+        "-snl",  # store symbolic links as links (not default)
+        "-ssp",  # do not change Last Access Time of source files while archiving
+        "-ms=on",  # enable solid archive
         "-t7z",
         # "-mcu=on",   # use UTF-8 for no Ascii : Not working (2022-07-24)
         # "-mhc=off",  # disable header compression: Not working (2022-07-24)
@@ -172,25 +170,20 @@ class _ProgramConfig(BaseModel):
 
 def _get_config_settings_from_source() -> Dict[str, Any]:
     """
-    A simple settings source that loads variables from a YAML file
-    at the XDG_CONFIG_HOME
+    Loads variable from YAML files in config directory
     """
-    xdg_config_home: Optional[Path] = None
+
+    xdg_config_home: Path
     if "XDG_CONFIG_HOME" in os.environ:
         xdg_config_home = Path(os.environ["XDG_CONFIG_HOME"])
     elif "HOME" in os.environ:
         xdg_config_home = Path(os.environ["HOME"]).joinpath(".config")
-
-    global_config: Optional[Path] = None
-    if platform.system() in {"Linux", "Darwin"}:
-        global_config = Path("/etc")
-
+    else:
+        raise Exception('"HOME" environment variable is not set')
 
     config: Dict[str, Any] = {}
-    for config_dir in [global_config, xdg_config_home]:
+    for config_dir in [Path("/etc"), xdg_config_home]:
         for config_filename in ["config.yaml", "config.yml"]:
-            if config_dir is None:
-                continue
 
             config_file = config_dir.joinpath("crossbackup", config_filename)
             if not config_file.is_file():
@@ -205,7 +198,8 @@ _config_dict: Dict[str, Any] = _ProgramConfig().dict()
 _config_dict.update(_get_config_settings_from_source())
 CONFIG: _ProgramConfig = _ProgramConfig.parse_obj(_config_dict)
 
+
 def update_program_config(local_config: Dict[str, Any]):
     _config_dict.update(local_config)
     global CONFIG
-    CONFIG =  _ProgramConfig.parse_obj(_config_dict)
+    CONFIG = _ProgramConfig.parse_obj(_config_dict)
