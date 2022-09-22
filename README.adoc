@@ -1,20 +1,120 @@
 = README
 :toc:
 
-[WIP] crossbackup 은 btrfs 서브볼륨, ZFS 데이터셋, rclone 간의 상호 증분백업을 가능하게 하는 것을 목적으로 하는 프로그램입니다. 또한 rclone 백업시, 클라우드의 용량과 대역폭을 아끼기 위해 내용을 rar, tar.zst, 7z 로 아카이브해서 올리는 기능을 지원합니다. 백업시, CoW 파일시스템의 스냅샷을 찍어서, 백업 도중 변경에 대응을 가능하게 하며, 스냅샷은 백업 종료시 자동으로 삭제합니다.
+[WIP] crossbackup 은 btrfs 서브볼륨, ZFS 데이터셋, rclone 간의 상호 증분백업을 가능하게 하는 것을 목적으로 하는 프로그램입니다. 또한 rclone 백업시, 클라우드의 용량과 대역폭을 아끼기 위해 내용을 rar, tar.zst, 7z 로 아카이브해서 올리는 기능을 지원합니다. 백업시, CoW 파일시스템의 스냅샷을 찍어서, 백업 도중 디렉토리 사용을 가능하게 하게 합니다. 스냅샷은 백업 종료시 자동으로 삭제됩니다.
 
 현재 zfs 데이터셋 또는 디렉터리를 rclone 에 증분백업 하는 것이 가능합니다.
 
+== Requirements
+`+pip3 install pydantic+`
+
+== Installation
+Add `+crossbackup+` to your `+PYTHONPATH+` and `+bin/crossbackup+` to your `+PATH+`.
+
+== How to use
+`+crossbackup [COMMAND] CONFIG-FILE+`
+
+`+crossbackup {--help}+`
+
+=== COMMANDS
+*--help|-h*::
+  Show short help text
+
+*--backup|-b*::
+  Run backup as described in CONFIG-FILE.
+
+*--clean|-c*::
+  Clean old backup as described in CONFIG-FILE.
+
+==== CONFIG-FILE
+
+다음은 CONFIG 파일의 예시입니다. `+backups+` 키 아래에 적혀 있는 순서대로 백업은 실행됩니다.
+
+[source, yaml]
+----
+---
+backups:
+  - name: db_backup
+    src:
+      path: zroot/DATA/db
+      type: zfs
+    dst:
+      path: "onedrive:data_db"
+      type: rclone
+      archive:
+        enable: true
+        type: 7z
+      rclone_config:
+        server_side_copy: true
+        use_trash: false
+      timeline:
+        min_age: 1800
+        limit_hourly: 5
+        limit_daily: 10
+        limit_weekly: 0
+        limit_monthly: 10
+        limit_yearly: 10
+----
+
+한 백업 설정은 다음의 키를 가지고 있어야 합니다.
+
+*name*::
+  백업의 이름입니다. `+dst+` 를 rclone 으로 하는 경우나, `+archive+` 옵션을 설정할 경우
+
+*src*::
+  원본이 되는 내용에 대해 기술합니다. <<source>> 에서 더 자세히 설명합니다.
+
+*dst*::
+  백업 경로에 대해 기술합니다. <<destination>> 에서 더 자세히 설명합니다.
+
+===== source
+`+src+` 키 아래에 들어가는 값에 대해 설명합니다.
+
+*path*::
+  백업 대상의 경로를 의미합니다. ZFS 의 경우는 dataset 의 이름을 의미합니다.
+
+*type*::
+  백업 대상의 타입을 의미합니다. 현재 다음의 타입을 지원합니다.
+  * directory
+  * ZFS
+  * BTRFS (지원 예정)
+
+===== destination
+`+dst+` 키 아래에 들어가는 값에 대해 설명합니다.
+
+*path*::
+  백업을 저장할 경로를 의미합니다.
+
+*type*::
+  저장 경로의 타입을 의미합니다. 현재 다음의 타입을 지원합니다.
+  * rclone
+  * dircetory (지원 예정)
+  * zfs (지원 예정)
+  * btrfs (지원 예정)
+
+*archive*::
+  백업을 할 때, 압축을 할지 정할 수 있습니다. 위의 샘플 설정파일을 참고 하세요. 현재 다음의 타입을 지원합니다.
+  * 7z (7zz, 혹은 7z 바이너리가 PATH에 있어야 함)
+  * rar (rar 바이너리가 PATH 에 있어야 함)
+  * tar.zst
+  아카이빙시 임시 파일은 시스템 임시 폴더(보통 `+/tmp+`)에 저장되며, 백업 후 자동으로 삭제됩니다.
+
+*timeline*::
+  오래된 백업을 지우는 기준을 기록합니다. 위의 샘플 설정파일을 참고하세요. snapper 과 동일한 알고리즘으로 작동합니다. `+--clean+` 명령어로 실행했을 때 적용됩니다.
+
+=== NOTE
+로그를 확인하세요. `+crossbackup+` 은 정상적으로 실행되었을 때, 어떠한 임시 스냅샷도, 임시 아카이브도 남기지 않습니다. 잘못된 설정으로 스냅샷이나 임시 파일이 여러분의 시스템에 쌓이고 있을 수도 있습니다.
+
 == Todo
 * [ ] btrfs snapshot 작동하는지 체크
-* [ ] btrfs/zfs 권한 사전에 없는지 체크 가능할까.
+* [ ] btrfs/zfs 스냅샷 권한 사전에 없는지 체크
   * btrfs 는 디렉터리 권한 요구하면 될것 같은데
-* [x] make archive with statement
-* [ ] allow user to config
+* Add `+--list+` flag
+* [ ] allow user to config options
 * [ ] typechecking
 * [ ] 출력
-** [ ] 출력 rclone 에 맞춰서
-** [ ] INFO: <name>: blalbla 이거 맞는거야?
+** [ ] 출력 포맷을 rclone 에 맞추자.
 * [ ] zfs-dataset <-> btrfs subvolume
 ** [ ] crossbackup using rsync
 ** [ ] crossbackup using zfs copy, btrfs copy
+* [ ] add dry-run feature

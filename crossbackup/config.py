@@ -1,3 +1,6 @@
+"""
+Provides Config objects
+"""
 import os
 import shutil
 from pathlib import Path
@@ -197,7 +200,6 @@ def _get_config_settings_from_source() -> Dict[str, Any]:
 _config_dict: Dict[str, Any] = _ProgramConfig().dict()
 _config_dict.update(_get_config_settings_from_source())
 CONFIG: _ProgramConfig = _ProgramConfig.parse_obj(_config_dict)
-
 
 def update_program_config(local_config: Dict[str, Any]):
     _config_dict.update(local_config)

@@ -45,6 +45,7 @@ class ArchiveType(enum.Enum):
     """
     Archive type being supported.
     """
+
     RAR = "rar"
     SEVENZ = "7z"
     TAR = "tar"
@@ -53,7 +54,6 @@ class ArchiveType(enum.Enum):
 class _SrcConfig(BaseModel):
     path: Any
     type: SrcType
-
 
 class _Timeline(BaseModel):
     min_age: int = 1800
@@ -99,7 +99,6 @@ class _DstConfig(BaseModel):
     #     avail_type = ["directory", "dir", "file", "zfs", "btrfs"]
     #     assert v in avail_type, f"{v} must be in {avail_type}"
     #     return v
-
 
 
 class SingleBackupConfig(BaseModel):
