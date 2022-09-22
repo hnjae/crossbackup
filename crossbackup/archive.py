@@ -1,3 +1,7 @@
+"""
+Provides Archive class
+"""
+
 import logging
 import tempfile
 import shutil
@@ -64,7 +68,11 @@ class _Archive:
                 logger.info("Deleting temporary directory %s", self.tmpdir)
                 shutil.rmtree(self.tmpdir)
         except Exception as err:
-            logger.critical("ERROR: Could not delete %s or %s", self.archive_path, self.tmpdir)
+            logger.critical(
+                "ERROR: Could not delete %s or %s",
+                self.archive_path,
+                self.tmpdir,
+            )
             raise err
 
         self.archive_path = None
@@ -97,8 +105,9 @@ class _Tar(_Archive):
         # NOTE: this is absolute path <2022-07-23, Hyunjae Kim>
         working_path: Path = self._get_working_path()
         self.tmpdir = Path(tempfile.mkdtemp(dir=working_path))
-        self.archive_path  = self.tmpdir.joinpath(f"{self.name}{CONFIG.tar_extension}")
-
+        self.archive_path = self.tmpdir.joinpath(
+            f"{self.name}{CONFIG.tar_extension}"
+        )
 
         if self.archive_path.exists():
             # NOTE: This will never likely to happen
@@ -143,13 +152,12 @@ class _Sevenz(_Archive):
             return self.archive_path
 
         if CONFIG.sevenz_path is None:
-            raise RuntimeError("Could not find 7z")
+            raise RuntimeError("Could not find 7z in $PATH")
 
         # NOTE: this is absolute path <2022-07-23, Hyunjae Kim>
         working_path: Path = self._get_working_path()
         self.tmpdir = Path(tempfile.mkdtemp(dir=working_path))
-        self.archive_path  = self.tmpdir.joinpath(f"{self.name}.7z")
-
+        self.archive_path = self.tmpdir.joinpath(f"{self.name}.7z")
 
         if self.archive_path.exists():
             # NOTE: This will never likely to happen
@@ -159,7 +167,7 @@ class _Sevenz(_Archive):
 
         logger.info("Archiving %s to %s", self.input_path, self.archive_path)
 
-        args: List[str] = [CONFIG.sevenz_path]
+        args: List[str] = [str(CONFIG.sevenz_path)]
         args.extend(CONFIG.sevenz_args)
         args.extend(["a", str(self.archive_path)])
         files = [
@@ -193,12 +201,12 @@ class _Rar(_Archive):
             return self.archive_path
 
         if CONFIG.rar_path is None:
-            raise RuntimeError("Could not find rar")
+            raise RuntimeError("Could not find rar in $PATH")
 
         # NOTE: this is absolute path <2022-07-23, Hyunjae Kim>
         working_path: Path = self._get_working_path()
         self.tmpdir = Path(tempfile.mkdtemp(dir=working_path))
-        self.archive_path  = self.tmpdir.joinpath(f"{self.name}.rar")
+        self.archive_path = self.tmpdir.joinpath(f"{self.name}.rar")
 
         if self.archive_path.exists():
             # NOTE: This will never likely to happen
@@ -207,7 +215,7 @@ class _Rar(_Archive):
             )
 
         logger.info("Archiving %s to %s", self.input_path, self.archive_path)
-        args: List[str] = [CONFIG.rar_path]
+        args: List[str] = [str(CONFIG.rar_path)]
         args.extend(CONFIG.rar_args)
 
         if "a" in args:
