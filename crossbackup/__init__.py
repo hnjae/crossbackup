@@ -19,14 +19,18 @@ logger_debug = logging.getLogger("debug")
 
 
 def get_argparser() -> argparse.ArgumentParser:
-    """ """
+    """
+    return ArgumentParser
+    """
 
     parser = argparse.ArgumentParser(
-        description="Backup Directorie(s) to rclone", allow_abbrev=True
+        description="cross-backup between ZFS, BTRFS and rclone",
+        allow_abbrev=True,
     )
+
     # TODO: get input from stdin <2022-07-23, Hyunjae Kim>
     parser.add_argument(
-        "yaml", type=Path, help="Config file written in YAML format"
+        "yaml", type=Path, help="Backup config file written in YAML format"
     )
 
     parser.add_argument(
@@ -41,7 +45,7 @@ def get_argparser() -> argparse.ArgumentParser:
         "--backup",
         action="store_true",
         default=False,
-        help="Run backups",
+        help="Run backup",
     )
     parser.add_argument(
         "-l",
@@ -50,6 +54,7 @@ def get_argparser() -> argparse.ArgumentParser:
         default=False,
         help="List backups",
     )
+    parser.add_argument("--create-sample-config")
     # TODO: dry-run options <2022-07-22, Hyunjae Kim>
 
     return parser
@@ -80,12 +85,12 @@ def run(args: argparse.Namespace) -> int:
 
         if "config" in yaml_:
             update_program_config(yaml_["config"])
-        if "syncs" in yaml_:
+        if "backups" in yaml_:
             # TODO: check same-name? <2022-07-22, Hyunjae Kim>
             syncs.extend(
                 [
                     Sync(SingleBackupConfig.parse_obj(item))
-                    for item in yaml_["syncs"]
+                    for item in yaml_["backups"]
                 ]
             )
 
